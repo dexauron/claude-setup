@@ -70,7 +70,56 @@ else
   echo "    готово: $(find "$CLAUDE_DIR/skills/gstack" -name SKILL.md | wc -l | tr -d ' ') навыков"
 fi
 
-# ── 4. MCP-серверы ──────────────────────────────────────────────────
+# ── 4. Скиллы интерфейса, анимаций и чистки кода ────────────────────
+# 20 скиллов из четырёх открытых репозиториев. Все бесплатные:
+#   jakubkrehel/skills   типографика, цвета, доступность, вёрстка, тексты
+#   emilkowalski/skills  анимации и подход Apple к движению интерфейса
+#   yetone/kill-ai-slop  убирает характерные следы генерации из вёрстки
+#   MengTo/Skills        промптинг интерфейса от дизайна, а не от кода
+if [ -d "$CLAUDE_DIR/skills/better-ui" ]; then
+  echo "==> Скиллы интерфейса уже стоят — пропускаю"
+else
+  echo "==> Скачиваю скиллы интерфейса и анимаций"
+  TMP_S="$(mktemp -d)"
+
+  if git clone --depth 1 -q https://github.com/jakubkrehel/skills.git "$TMP_S/jk"; then
+    for s in "$TMP_S"/jk/skills/*/; do
+      name="$(basename "$s")"
+      rm -rf "$CLAUDE_DIR/skills/$name"; cp -r "$s" "$CLAUDE_DIR/skills/$name"
+    done
+    echo "    типографика, цвета, доступность, вёрстка, тексты"
+  fi
+
+  if git clone --depth 1 -q https://github.com/emilkowalski/skills.git "$TMP_S/ek"; then
+    for s in "$TMP_S"/ek/skills/*/; do
+      name="$(basename "$s")"
+      rm -rf "$CLAUDE_DIR/skills/$name"; cp -r "$s" "$CLAUDE_DIR/skills/$name"
+    done
+    echo "    анимации и подход Apple"
+  fi
+
+  # У этого репозитория папка называется skill — даём осмысленное имя
+  if git clone --depth 1 -q https://github.com/yetone/kill-ai-slop.git "$TMP_S/ks"; then
+    rm -rf "$CLAUDE_DIR/skills/kill-ai-slop"
+    cp -r "$TMP_S/ks/skill" "$CLAUDE_DIR/skills/kill-ai-slop"
+    echo "    kill-ai-slop"
+  fi
+
+  # Из этого репозитория берём только UI-часть: остальные 126 скиллов
+  # про соцсети и озвучку, к разработке отношения не имеют
+  if git clone --depth 1 -q https://github.com/MengTo/Skills.git "$TMP_S/mt"; then
+    src="$TMP_S/mt/agent-skills/ui/design-first-ui-prompting"
+    if [ -d "$src" ]; then
+      rm -rf "$CLAUDE_DIR/skills/design-first-ui-prompting"
+      cp -r "$src" "$CLAUDE_DIR/skills/design-first-ui-prompting"
+      echo "    design-first-ui-prompting"
+    fi
+  fi
+
+  rm -rf "$TMP_S"
+fi
+
+# ── 5. MCP-серверы ──────────────────────────────────────────────────
 # Ставятся в область пользователя. Ключи берутся из переменных
 # окружения — в репозитории их нет и быть не должно.
 if command -v claude >/dev/null 2>&1; then

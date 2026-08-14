@@ -91,3 +91,18 @@ claude plugin uninstall unreal-engine-skills-for-claude-code --scope user
 Плюс из «24 штук» с картинок: `frontend-design` `superpowers` `context7`
 `playwright` `firecrawl` `supabase` `telegram` `github` `notion` `hyperframes`
 `skill-creator` `caveman` `claude-seo` `gstack` `ui-ux-pro-max`.
+
+## Скиллы интерфейса и анимаций
+
+Двадцать скиллов из четырёх открытых репозиториев. Все бесплатные,
+установщик качает их из первоисточников.
+
+| Откуда | Что даёт |
+|---|---|
+| `jakubkrehel/skills` | типографика, цвета, доступность, вёрстка, тексты интерфейса |
+| `emilkowalski/skills` | анимации, подход Apple к движению, выбор UI-библиотеки |
+| `yetone/kill-ai-slop` | убирает характерные следы генерации из вёрстки и текстов |
+| `MengTo/Skills` | промптинг интерфейса от дизайна, а не от кода |
+
+Из последнего репозитория берётся только UI-часть: остальные 126 скиллов
+там про соцсети и озвучку, к разработке отношения не имеют.
