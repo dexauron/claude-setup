@@ -92,6 +92,11 @@ claude plugin uninstall unreal-engine-skills-for-claude-code --scope user
 `playwright` `firecrawl` `supabase` `telegram` `github` `notion` `hyperframes`
 `skill-creator` `caveman` `claude-seo` `gstack` `ui-ux-pro-max`.
 
+## Домашний сервер
+
+Настройка личного сервера на Ubuntu: файлы, Docker, доступ с телефона
+и компьютера, подключение ИИ — в [server/README.md](server/README.md).
+
 ## Скиллы интерфейса и анимаций
 
 Двадцать скиллов из четырёх открытых репозиториев. Все бесплатные,
