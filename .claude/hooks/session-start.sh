@@ -15,10 +15,11 @@ fi
 
 # ── Python: расшифровка речи, склейки, удаление фона, HEIC, загрузка ──
 # av<19: в PyAV 19 faster-whisper не может прочитать звук из файла
-if ! python3 -c 'import cv2, faster_whisper, scenedetect, rembg, filetype, pillow_heif, av, sys; sys.exit(int(av.__version__.split(".")[0]) >= 19)' 2>/dev/null \
+# piper-tts — запасной офлайн-голос для черновиков рилсов
+if ! python3 -c 'import cv2, faster_whisper, scenedetect, rembg, filetype, pillow_heif, piper, av, sys; sys.exit(int(av.__version__.split(".")[0]) >= 19)' 2>/dev/null \
    || ! command -v yt-dlp >/dev/null; then
   pip3 install -q --break-system-packages \
-    opencv-python-headless faster-whisper "av<19" scenedetect "rembg[cpu,cli]" pillow-heif yt-dlp
+    opencv-python-headless faster-whisper "av<19" scenedetect "rembg[cpu,cli]" pillow-heif piper-tts yt-dlp
 fi
 
 # ── Модели: скачиваются один раз и остаются в кэше контейнера ──
@@ -33,6 +34,15 @@ except Exception:
 PY
 if ! ls "${U2NET_HOME:-$HOME/.rembg/models}"/isnet-general-use/*.onnx >/dev/null 2>&1; then
   python3 -c 'from rembg import new_session; new_session("isnet-general-use")'
+fi
+
+# ── Рилсы: Remotion и его браузер для рендера ──
+REELS="${CLAUDE_PROJECT_DIR:-.}/reels"
+if [ -f "$REELS/package-lock.json" ]; then
+  if [ ! -d "$REELS/node_modules/remotion" ]; then
+    (cd "$REELS" && npm ci --no-audit --no-fund --loglevel=error)
+  fi
+  (cd "$REELS" && npx remotion browser ensure >/dev/null)
 fi
 
 echo "media toolkit ready"

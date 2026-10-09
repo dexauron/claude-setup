@@ -119,11 +119,14 @@ else
   rm -rf "$TMP_S"
 fi
 
-# ── 4б. Навык монтажа фото и видео ──────────────────────────────────
-# Свой навык, хранится в этом репозитории. Обновляется при каждом запуске.
-echo "==> Ставлю навык монтажа фото и видео"
-rm -rf "$CLAUDE_DIR/skills/media-editing"
-cp -r "$HERE/.claude/skills/media-editing" "$CLAUDE_DIR/skills/media-editing"
+# ── 4б. Навыки монтажа фото, видео и рилсов ─────────────────────────
+# Свои навыки, хранятся в этом репозитории. Обновляются при каждом запуске.
+# Шаблон рилсов лежит в reels/ этого репозитория — навык ссылается на него.
+echo "==> Ставлю навыки монтажа фото, видео и рилсов"
+for s in media-editing reels-tutorial; do
+  rm -rf "${CLAUDE_DIR:?}/skills/$s"
+  cp -r "$HERE/.claude/skills/$s" "$CLAUDE_DIR/skills/$s"
+done
 if ! command -v ffmpeg >/dev/null 2>&1; then
   echo "!! Для монтажа нужен ffmpeg — инструкция в README.md, раздел «Монтаж фото и видео»"
 fi
