@@ -33,6 +33,20 @@ npx remotion render src/index.ts ProductCard out.mp4 --props=props.json --public
 #   "items": [{"image": "milkis.png", "name": "Милкис", "sub": "газировка из Кореи"}]}
 ```
 
+## Витрина бренда (композиция `BrandShowcase`)
+
+Заставка с логотипом → карточки товаров на светлом фоне в цветах магазина
+(дуга и «линии скорости» из логотипа, свист на каждую карточку) → финал
+с логотипом и адресом. Длительность считается сама:
+`intro + seconds × товаров + outro`.
+
+```bash
+npx remotion render src/index.ts BrandShowcase out.mp4 --props=props.json --public-dir=DIR
+# props.json: {"seconds": 2.6, "intro": 1.6, "outro": 2.4, "logo": "logo.png",
+#   "green": "#517D51", "dark": "#2A322B", "whoosh": "whoosh.wav",
+#   "address": "Грозный, ул. Мира, 52А, корп. 1", "items": [...как у ProductCard]}
+```
+
 ## plan.json
 
 | Поле | Что это |
