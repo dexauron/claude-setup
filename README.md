@@ -24,8 +24,9 @@ bash install.sh
 | Навыки ui-ux-pro-max (6 шт.) | качаются при установке | `~/.claude/skills/` |
 | gstack (57 навыков) | качается при установке | `~/.claude/skills/gstack` |
 | MCP-серверы (3 шт.) | `install.sh` | область пользователя |
+| Навык монтажа фото и видео | `.claude/skills/media-editing` | `~/.claude/skills/media-editing` |
 
-Навыки не хранятся здесь копией — `install.sh` скачивает их из
+Чужие навыки не хранятся здесь копией — `install.sh` скачивает их из
 первоисточника. Так они всегда свежие, а репозиторий остаётся крошечным.
 
 `~/.claude` — домашняя папка Claude Code. Всё, что там лежит,
@@ -107,7 +108,32 @@ claude plugin uninstall unreal-engine-skills-for-claude-code --scope user
 Из последнего репозитория берётся только UI-часть: остальные 126 скиллов
 там про соцсети и озвучку, к разработке отношения не имеют.
 
-## Монтаж видео
+## Монтаж фото и видео
+
+### Свой навык `media-editing`
+
+Хранится здесь, в `.claude/skills/media-editing`. Это инструкция для Claude:
+порядок работы, рецепты ffmpeg и ImageMagick (все проверены прогоном) и
+подводные камни. В папке `scripts/` лежат помощники: лист контактов
+с точными таймкодами, расшифровка речи в субтитры, точная громкость,
+титры с переносом строк.
+
+**В облачных сессиях этого репозитория** всё ставится само: скрипт
+`.claude/hooks/session-start.sh` доставляет недостающее (exiftool,
+mediainfo, faster-whisper, PySceneDetect, rembg, pillow-heif, yt-dlp)
+и скачивает модели. Первый запуск занимает 1–2 минуты, повторный — пару
+секунд. Сессия стартует только после того, как скрипт отработал.
+
+**На своём компьютере** `install.sh` кладёт навык в `~/.claude/skills`.
+Инструменты нужно поставить один раз самому:
+
+```bash
+brew install ffmpeg imagemagick exiftool          # macOS
+sudo apt install ffmpeg imagemagick libimage-exiftool-perl   # Ubuntu
+pip install faster-whisper "av<19" scenedetect "rembg[cpu,cli]" pillow-heif opencv-python-headless yt-dlp
+```
+
+### Плагины
 
 Девять плагинов из встроенного каталога Claude Code (`anthropic-plugin-directory`).
 Все от сторонних авторов, Anthropic их не проверял — поставлены по прямой
