@@ -288,7 +288,16 @@
     "zoominfo@claude-plugins-official": true,
     "zscaler@claude-plugins-official": true,
     "langfuse@claude-plugins-official": true,
-    "zyte-web-data@claude-plugins-official": true
+    "zyte-web-data@claude-plugins-official": true,
+    "ffmpeg-llm@anthropic-plugin-directory": true,
+    "watch-video@anthropic-plugin-directory": true,
+    "video-cleanup@anthropic-plugin-directory": true,
+    "remotion@anthropic-plugin-directory": true,
+    "ai-video-editor-timeline-by-manymotions@anthropic-plugin-directory": true,
+    "openclip@anthropic-plugin-directory": true,
+    "audiopod@anthropic-plugin-directory": true,
+    "videodb@anthropic-plugin-directory": true,
+    "video-to-code-skill@anthropic-plugin-directory": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {

@@ -1,0 +1,73 @@
+# Рилсы-инструкции из записи экрана
+
+Шаблон Remotion `ScreenTutorial`: 1080×1920, 30 fps. Структура ролика:
+заголовок-крючок → шаги с плашкой «Шаг N» → запись экрана в карточке с
+плавным приближением к месту действия и кольцом на клике → крупные субтитры
+по 1–3 слова с подсветкой звучащего слова → призыв «Сохрани».
+Озвучка — ElevenLabs (запасной вариант для черновиков — Piper).
+
+## Как собрать ролик
+
+```bash
+# 1. Голос (один раз): подобрать низкий спокойный русский голос и добавить его себе
+python3 tools/voice_picker.py search /tmp/voices            # таблица + превью mp3
+python3 tools/voice_picker.py add PUBLIC_OWNER_ID VOICE_ID "Диктор"
+
+# 2. План ролика: сцены, таймкоды записи, текст озвучки — пример в examples/
+python3 tools/build_reel.py plan.json build/                # озвучка, куски записи, reel.json
+
+# 3. Рендер и проверка
+tools/render.sh build/ reel.mp4                             # Remotion + громкость −14 LUFS
+python3 tools/check_sync.py reel.mp4 build/reel.json        # синхронность субтитров и голоса
+```
+
+## Карточка товара (композиция `ProductCard`)
+
+Всплывающая карточка: товар (PNG без фона) покачивается в объёме ±28°, по
+нему проходит блик, внизу название и подпись. Полного оборота на 360° из
+одного фото не бывает — нужна съёмка на поворотной подставке.
+
+```bash
+npx remotion render src/index.ts ProductCard out.mp4 --props=props.json --public-dir=DIR
+# props.json: {"seconds": 2.6, "accent": "#8FCB8A", "background": "kassa.jpg",
+#   "items": [{"image": "milkis.png", "name": "Милкис", "sub": "газировка из Кореи"}]}
+```
+
+## Витрина бренда (композиция `BrandShowcase`)
+
+Заставка с логотипом → карточки товаров на светлом фоне в цветах магазина
+(дуга и «линии скорости» из логотипа, свист на каждую карточку) → финал
+с логотипом и адресом. Длительность считается сама:
+`intro + seconds × товаров + outro`.
+
+```bash
+npx remotion render src/index.ts BrandShowcase out.mp4 --props=props.json --public-dir=DIR
+# props.json: {"seconds": 2.6, "intro": 1.6, "outro": 2.4, "logo": "logo.png",
+#   "green": "#517D51", "dark": "#2A322B", "whoosh": "whoosh.wav",
+#   "address": "Грозный, ул. Мира, 52А, корп. 1", "items": [...как у ProductCard]}
+```
+
+## plan.json
+
+| Поле | Что это |
+|---|---|
+| `source`, `crop` | запись экрана и область окна программы `[x, y, w, h]` в пикселях |
+| `tts` | `{"engine": "file", "path": "voiceover.mp3"}` — готовая озвучка одним файлом (режется по фразам сцен сама); `{"engine": "elevenlabs", "voiceId", "model", "settings"}`; `{"engine": "piper", "voice": "denis"}` |
+| `accent`, `kicker` | акцентный цвет и строка над шагами («Штрих-М 7 · лайфхак») |
+| `hook`, `cta` | `title` (слова в `*звёздочках*` — акцентом), `subtitle`, `stillAt` — кадр фона, `text` |
+| `scenes[]` | `step`, `label`, `from`/`to` — кусок записи в секундах, `focus` `{x, y, zoom}` в долях кадра, `click` `[x, y, сек записи]`, `text` |
+| `text` / `say` | `text` — субтитры; `say` — что произносить, если отличается («43» → «сорок три») |
+
+Длина сцены = длина фразы + паузы; кусок записи ускоряется или замедляется
+под неё. Ожидание загрузки и пустые секунды просто не включайте в сцены.
+
+## Зависимости и лицензии
+
+- Remotion — бесплатно для частных лиц и команд до 3 человек, дальше нужна
+  лицензия: https://www.remotion.pro/license
+- ElevenLabs — ключ в переменной `ELEVENLABS_API_KEY`; для коммерческих
+  роликов нужен платный тариф.
+- Шрифт Montserrat (OFL-1.1) берётся из npm-пакета `@fontsource/montserrat`
+  и вшивается в сборку: рендер не ходит в сеть за шрифтами.
+- Голоса Piper: `denis`, `dmitri` — данные CC0; `irina` — лицензия не указана;
+  `ruslan` — только некоммерческое использование.
