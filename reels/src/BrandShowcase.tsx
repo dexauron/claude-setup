@@ -238,14 +238,16 @@ const Card: React.FC<{
             <div
               style={{
                 position: "relative",
-                height: 600,
+                lineHeight: 0,
                 transform: `translateY(${float}px) rotateY(${rot}deg)`,
               }}
             >
+              {/* высокие упаковки — по высоте, широкие (лапша, плитка) — по ширине */}
               <Img
                 src={src}
                 style={{
-                  height: 600,
+                  maxHeight: 600,
+                  maxWidth: 620,
                   filter: `drop-shadow(0 34px 28px ${dark}40)`,
                 }}
               />
