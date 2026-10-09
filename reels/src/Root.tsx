@@ -1,4 +1,5 @@
 import { Composition } from "remotion";
+import { ProductCard, type ProductCardProps } from "./ProductCard";
 import { ScreenTutorial } from "./ScreenTutorial";
 import type { ReelProps } from "./types";
 
@@ -16,7 +17,22 @@ const defaults: ReelProps = {
   words: [],
 };
 
+const cardDefaults: ProductCardProps = { items: [], seconds: 2.6, accent: "#8FCB8A" };
+
 export const RemotionRoot: React.FC = () => (
+  <>
+  <Composition
+    id="ProductCard"
+    component={ProductCard}
+    defaultProps={cardDefaults}
+    fps={30}
+    width={1080}
+    height={1920}
+    durationInFrames={90}
+    calculateMetadata={({ props }) => ({
+      durationInFrames: Math.max(1, Math.round(props.items.length * props.seconds * 30)),
+    })}
+  />
   <Composition
     id="ScreenTutorial"
     component={ScreenTutorial}
@@ -32,4 +48,5 @@ export const RemotionRoot: React.FC = () => (
       durationInFrames: Math.ceil(props.duration * props.fps),
     })}
   />
+  </>
 );

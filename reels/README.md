@@ -21,6 +21,18 @@ tools/render.sh build/ reel.mp4                             # Remotion + гро�
 python3 tools/check_sync.py reel.mp4 build/reel.json        # синхронность субтитров и голоса
 ```
 
+## Карточка товара (композиция `ProductCard`)
+
+Всплывающая карточка: товар (PNG без фона) покачивается в объёме ±28°, по
+нему проходит блик, внизу название и подпись. Полного оборота на 360° из
+одного фото не бывает — нужна съёмка на поворотной подставке.
+
+```bash
+npx remotion render src/index.ts ProductCard out.mp4 --props=props.json --public-dir=DIR
+# props.json: {"seconds": 2.6, "accent": "#8FCB8A", "background": "kassa.jpg",
+#   "items": [{"image": "milkis.png", "name": "Милкис", "sub": "газировка из Кореи"}]}
+```
+
 ## plan.json
 
 | Поле | Что это |
