@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Сборка данных рилса-инструкции из plan.json.
 
-Озвучивает каждую сцену (ElevenLabs или Piper — см. "tts" в plan.json),
+Озвучивает каждую сцену (ElevenLabs, Piper или готовый файл озвучки — см.
+"tts" в plan.json),
 подгоняет кусок записи экрана под длину фразы, раскладывает слова субтитров
 по времени и пишет reel.json для Remotion (композиция ScreenTutorial).
 
@@ -41,8 +42,11 @@ class ElevenVoice:
         self.model = cfg.get("model", "eleven_multilingual_v2")
         self.settings = cfg.get("settings", {})
 
-    def speak(self, text, prev=None, nxt=None):
-        return elevenlabs.tts(text, self.voice_id, self.model, self.settings, prev, nxt)
+    def speak_all(self, say):
+        # соседние фразы передаются в API, чтобы интонация шла одной речью
+        return [elevenlabs.tts(t, self.voice_id, self.model, self.settings,
+                               say[i - 1] if i else None, say[i + 1] if i + 1 < len(say) else None)
+                for i, t in enumerate(say)]
 
 
 class PiperVoice:
@@ -58,16 +62,60 @@ class PiperVoice:
             for ext in ("", ".json"):
                 run(["curl", "-sSL", "-o", f"{self.model}{ext}", PIPER_URL.format(v=self.voice) + ext])
 
-    def speak(self, text, prev=None, nxt=None):
-        raw = subprocess.run(
-            ["python3", "-m", "piper", "-m", str(self.model), "--length-scale", str(self.length_scale),
-             "--output-raw"], input=text.encode(), check=True, capture_output=True).stdout
-        return np.frombuffer(raw, np.int16).astype(np.float32) / 32768, None
+    def speak_all(self, say):
+        out = []
+        for text in say:
+            raw = subprocess.run(
+                ["python3", "-m", "piper", "-m", str(self.model), "--length-scale", str(self.length_scale),
+                 "--output-raw"], input=text.encode(), check=True, capture_output=True).stdout
+            out.append((np.frombuffer(raw, np.int16).astype(np.float32) / 32768, None))
+        return out
 
 
-def make_voice(plan):
+class FileVoice:
+    """Готовая озвучка одним файлом (например, сгенерированная на сайте ElevenLabs).
+    Слова распознаются Whisper'ом и сопоставляются с текстом сцен; файл режется
+    по паузам между сценами."""
+    sr = 44100
+
+    def __init__(self, cfg, base):
+        path = (base / cfg["path"]).resolve()
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-vn", "-ac", "1", "-ar", str(self.sr),
+                              "-f", "s16le", "-"], check=True, capture_output=True).stdout
+        self.audio = np.frombuffer(raw, np.int16).astype(np.float32) / 32768
+
+    def speak_all(self, say):
+        heard = heard_words(self.audio, self.sr, with_end=True)
+        script = [(i, norm(w)) for i, text in enumerate(say) for w in text.split() if norm(w)]
+        sm = difflib.SequenceMatcher(a=[w for _, w in script], b=[norm(h[0]) for h in heard], autojunk=False)
+        first, last = {}, {}
+        for blk in sm.get_matching_blocks():
+            for k in range(blk.size):
+                seg, h = script[blk.a + k][0], blk.b + k
+                first.setdefault(seg, h)
+                last[seg] = h
+        missing = [say[i] for i in range(len(say)) if i not in first]
+        if missing:
+            raise SystemExit("В озвучке не нашлись фразы (текст отличается от плана?):\n  " + "\n  ".join(missing))
+        # границы сцен — середина паузы между последним словом одной и первым словом следующей
+        bounds = [0.0]
+        for i in range(1, len(say)):
+            bounds.append((heard[last[i - 1]][2] + heard[first[i]][1]) / 2)
+        bounds.append(len(self.audio) / self.sr)
+        out = []
+        for i in range(len(say)):
+            a, b = bounds[i], bounds[i + 1]
+            cut = self.audio[int(a * self.sr): int(b * self.sr)]
+            words = [(w, t0 - a) for w, t0, _ in heard if a <= t0 < b]
+            out.append((cut, words))
+        return out
+
+
+def make_voice(plan, base):
     cfg = plan.get("tts") or {"engine": "piper", "voice": plan.get("voice", "denis"),
                               "lengthScale": plan.get("lengthScale", 0.95)}
+    if cfg["engine"] == "file":
+        return FileVoice(cfg, base)
     return (ElevenVoice if cfg["engine"] == "elevenlabs" else PiperVoice)(cfg)
 
 
@@ -90,14 +138,16 @@ def vowels(word):
 _whisper = None
 
 
-def heard_words(speech, sr):
-    """Слова, которые реально прозвучали, с началом каждого (Whisper по озвучке)."""
+def heard_words(speech, sr, with_end=False):
+    """Слова, которые реально прозвучали, с началом (и концом) каждого (Whisper по озвучке)."""
     global _whisper
     if _whisper is None:
         from faster_whisper import WhisperModel
         _whisper = WhisperModel("small", device="cpu", compute_type="int8")
     idx = np.round(np.arange(0, len(speech), sr / 16000)).astype(int)
     segs, _ = _whisper.transcribe(speech[idx[idx < len(speech)]], language="ru", word_timestamps=True)
+    if with_end:
+        return [(w.word.strip(), w.start, w.end) for s in segs for w in s.words]
     return [(w.word.strip(), w.start) for s in segs for w in s.words]
 
 
@@ -162,7 +212,7 @@ def main():
     outdir.mkdir(parents=True, exist_ok=True)
     src = str((plan_path.parent / plan["source"]).resolve())
     crop = plan["crop"]
-    voice = make_voice(plan)
+    voice = make_voice(plan, plan_path.parent)
     SR = voice.sr
     clip_h = plan.get("clipHeight", 1080)
 
@@ -173,10 +223,9 @@ def main():
     t = 0.0
     scenes, words, track = [], [], []
     say = [seg.get("say", seg["text"]) for seg in segments]
+    spoken = voice.speak_all(say)
     for i, seg in enumerate(segments):
-        # соседние фразы передаются в ElevenLabs, чтобы интонация шла одной речью
-        speech, heard = voice.speak(say[i], say[i - 1] if i else None, say[i + 1] if i + 1 < len(say) else None)
-        speech, heard = trim(speech, heard, SR)
+        speech, heard = trim(*spoken[i], SR)
         sdur = len(speech) / SR
         dur = max(seg.get("minDuration", 1.2), LEAD + sdur + TAIL)
         scene = {"kind": seg["kind"], "start": round(t, 3), "duration": round(dur, 3)}

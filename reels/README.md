@@ -26,7 +26,7 @@ python3 tools/check_sync.py reel.mp4 build/reel.json        # синхронно
 | Поле | Что это |
 |---|---|
 | `source`, `crop` | запись экрана и область окна программы `[x, y, w, h]` в пикселях |
-| `tts` | `{"engine": "elevenlabs", "voiceId", "model", "settings"}` или `{"engine": "piper", "voice": "denis"}` |
+| `tts` | `{"engine": "file", "path": "voiceover.mp3"}` — готовая озвучка одним файлом (режется по фразам сцен сама); `{"engine": "elevenlabs", "voiceId", "model", "settings"}`; `{"engine": "piper", "voice": "denis"}` |
 | `accent`, `kicker` | акцентный цвет и строка над шагами («Штрих-М 7 · лайфхак») |
 | `hook`, `cta` | `title` (слова в `*звёздочках*` — акцентом), `subtitle`, `stillAt` — кадр фона, `text` |
 | `scenes[]` | `step`, `label`, `from`/`to` — кусок записи в секундах, `focus` `{x, y, zoom}` в долях кадра, `click` `[x, y, сек записи]`, `text` |
